@@ -1,4 +1,3 @@
-import os
 import hashlib
 import uuid 
 from datetime import datetime
@@ -6,9 +5,13 @@ from google.cloud import storage, firestore
 import functions_framework
 
 
-storage_client = storage.Client()
-db = firestore.Client()
-
+try:
+    storage_client = storage.Client()
+    db = firestore.Client()
+except Exception as e:
+    print(f"Error: Could not initialize cloud clients: {e}")
+    storage_client = None
+    db = None
 
 collection_name = 'files'
 
