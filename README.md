@@ -34,23 +34,19 @@ gcloud functions deploy process-file \
   --timeout=60s
 ```
 
-## Local Development and Testing
+## Testing
 
 For local development:
 
 1. Set up a virtual environment:
+
    ```bash
    python -m venv .venv
-   source .venv/bin/activate  
+   source .venv/bin/activate
    pip install -r requirements.txt
    ```
 
-2. For testing without Google Cloud credentials, use the Firebase emulators:
-   ```bash
-   export FIRESTORE_EMULATOR_HOST="localhost:8080"
-   ```
-
-3. Run tests:
+2. Run tests:
    ```bash
    pytest test/
    ```
@@ -58,6 +54,7 @@ For local development:
 ## API Service
 
 The `api/` directory contains a FastAPI service that provides endpoints to:
+
 - List processed files
 - Get file metadata
 - Download files
