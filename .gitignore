@@ -1,2 +1,4 @@
 .venv
 api/venv
+terraform/function.zip
+terraform/.terraform*

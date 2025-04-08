@@ -11,7 +11,7 @@ mock_db = MagicMock()
 
 with patch('google.cloud.storage.Client', return_value=mock_storage):
     with patch('google.cloud.firestore.Client', return_value=mock_db):
-        import main
+        import function.main as main
 
 class CloudEvent:
     def __init__(self, data):

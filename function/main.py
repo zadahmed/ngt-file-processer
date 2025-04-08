@@ -24,7 +24,7 @@ def process_file(cloud_event):
     data = cloud_event.data
     bucket_name = data['bucket']
     file_name = data['name']
-    content_type = data['contentType']
+    content_type = data.get('contentType', '')
     size = int(data.get('size', 0))
 
     print(f"Processing file: {file_name} in bucket: {bucket_name}")
