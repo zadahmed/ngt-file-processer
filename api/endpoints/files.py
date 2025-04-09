@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 
 from core.db import get_db 
 from models.file import FileUpdate, FileResponse
-from app.config import COLLECTION_NAME
+from config import COLLECTION_NAME
 
 router = APIRouter(tags=["files"])
 
