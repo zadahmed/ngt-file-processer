@@ -17,7 +17,7 @@ resource "google_storage_bucket" "function_code" {
 
 data "archive_file" "function_zip" {
     type        = "zip"
-    source_dir  = "${path.module}/../function"
+    source_dir  = "${path.module}/../function"  
     output_path = "${path.module}/function.zip"
 }
 
@@ -27,19 +27,52 @@ resource "google_storage_bucket_object" "function_object" {
     source = data.archive_file.function_zip.output_path
 }
 
-resource "google_cloudfunctions_function" "process_file_function" {
-  name        = "process-file"
-  description = "Function to process files uploaded to bucket"
-  runtime     = "python310"
 
-  available_memory_mb   = 256
-  source_archive_bucket = google_storage_bucket.function_code.name
-  source_archive_object = google_storage_bucket_object.function_object.name
-  entry_point           = "process_file"
+resource "google_project_service" "eventarc" {
+  project = var.project_id
+  service = "eventarc.googleapis.com"
+  disable_dependent_services = false
+}
+
+data "google_storage_project_service_account" "gcs_account" {
+  project = var.project_id
+}
+
+resource "google_storage_bucket_iam_member" "eventarc_storage_permission" {
+  bucket = google_storage_bucket.file_upload_bucket.name
+  role   = "roles/storage.admin"  
+  member = "serviceAccount:${data.google_storage_project_service_account.gcs_account.email_address}"
+}
+
+resource "google_cloudfunctions2_function" "process_file_function" {
+  name        = "file-processor-function"
+  description = "Function to process files uploaded to GCS"
+  location    = var.region
+  
+  build_config {
+    runtime     = "python310"
+    entry_point = "process_file"
+    source {
+      storage_source {
+        bucket = google_storage_bucket.function_code.name
+        object = google_storage_bucket_object.function_object.name
+      }
+    }
+  }
+  
+  service_config {
+    max_instance_count = 10
+    available_memory   = "256M"
+    timeout_seconds    = 60
+  }
   
   event_trigger {
-    event_type = "google.storage.object.finalize"
-    resource   = google_storage_bucket.file_upload_bucket.name
+    trigger_region = var.region
+    event_type     = "google.cloud.storage.object.v1.finalized"
+    event_filters {
+      attribute = "bucket"
+      value     = google_storage_bucket.file_upload_bucket.name
+    }
   }
 }
 
@@ -63,3 +96,4 @@ resource "google_cloud_run_service_iam_member" "public_access" {
   role     = "roles/run.invoker"
   member   = "allUsers"
 }
+
