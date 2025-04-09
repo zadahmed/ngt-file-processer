@@ -7,11 +7,13 @@ A FastAPI-based API for accessing and managing file metadata stored in Firestore
 ### Local Development
 
 1. Install dependencies:
+
    ```bash
    pip install -r requirements.txt
    ```
 
 2. Run the application:
+
    ```bash
    uvicorn app.main:app --reload
    ```
@@ -28,14 +30,24 @@ A FastAPI-based API for accessing and managing file metadata stored in Firestore
 ### Docker
 
 1. Build the Docker image:
+
    ```bash
    docker build -t file-processor-api .
    ```
 
 2. Run the container:
-   ```bash
+
+   ````bash
    docker run -p 8080:8080 file-processor-api
-   ```
+   ```xw
+
+   ````
+
+3. For Mac with M1
+
+```bash
+   docker buildx build --platform linux/amd64 -t gcr.io/ngt-file-processor/file-processor-api . --push
+```
 
 ## API Endpoints
 
