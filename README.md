@@ -1,63 +1,109 @@
-# NGT File Processor Cloud Function
+# NGT File Processing System
 
-This repository contains a Google Cloud Function that processes files uploaded to Google Cloud Storage and stores metadata in Firestore. The solution was built for the Next Gate Tech (NGT) Software Engineer assignment.
+A cloud-based system for processing files uploaded to a storage bucket and providing API access to the processed data.
 
-## Project Structure
 
-```
-.
-├── main.py           # Cloud Function code
-├── requirements.txt  # Python dependencies
-├── api/              # API service for file metadata
-├── test/             # Test files
-└── .venv/            # Virtual environment (not tracked in git)
-```
+API Url - https://file-processor-api-797926948558.us-central1.run.app
 
-## Cloud Function
+## Overview
 
-The Cloud Function (`main.py`) is triggered when files are uploaded to a Cloud Storage bucket. It extracts file metadata and stores it in Firestore, ensuring idempotent processing even if the function is triggered multiple times for the same file.
+This project implements a complete file processing system using Google Cloud Platform services:
 
-## Deployment
+1. **Storage Bucket**: For uploading files to be processed
+2. **Cloud Function**: Triggered when files are uploaded, processes them, and stores metadata in Firestore
+3. **FastAPI Service**: Deployed on Cloud Run to provide CRUD operations for the processed file metadata
+4. **Infrastructure as Code**: Uses Terraform to provision and manage the entire infrastructure
 
-Deployed the Cloud Function using Google Cloud CLI:
+## Components
 
-```bash
-gcloud functions deploy process-file \
-  --gen2 \
-  --runtime=python310 \
-  --region=us-central1 \
-  --source=. \
-  --entry-point=process_file \
-  --trigger-event-filters="type=google.cloud.storage.object.v1.finalized" \
-  --trigger-event-filters="bucket=NGT_BUCKET" \
-  --memory=256MB \
-  --timeout=60s
-```
+### Cloud Function
 
-## Testing
+The Cloud Function is triggered when files are uploaded to the storage bucket. It:
+- Extracts file metadata (name, type, size, etc.)
+- Generates a unique ID for each file to ensure idempotent processing
+- Stores the metadata in Firestore
+- Handles concurrent file uploads efficiently
 
-For local development:
+### API Service
 
-1. Set up a virtual environment:
+A FastAPI application that provides CRUD operations for accessing file metadata:
+- List all processed files
+- Get details for a specific file
+- Update file metadata
+- Delete file records
 
+
+### Infrastructure
+
+Terraform is used to provision all required infrastructure:
+- Storage buckets
+- Cloud Function
+- Cloud Run service
+- IAM permissions
+- Service accounts
+
+## Getting Started
+
+### Prerequisites
+
+- [Google Cloud SDK](https://cloud.google.com/sdk/docs/install)
+- [Terraform](https://www.terraform.io/downloads.html)
+- [Python 3.11+](https://www.python.org/downloads/)
+- [Docker](https://docs.docker.com/get-docker/)
+
+### Local Development
+
+1. Clone the repository:
    ```bash
-   python -m venv .venv
-   source .venv/bin/activate
+   git clone https://github.com/zadahmed/ngt-file-processer
+   cd file-processing-system
+   ```
+
+2. Run the API locally:
+   ```bash
+   cd api
    pip install -r requirements.txt
+   uvicorn main:app --reload
    ```
 
-2. Run tests:
+3. Visit http://localhost:8000/docs to see the API documentation
+
+### Deployment
+
+1. Build and push the API container:
    ```bash
-   pytest test/
+   cd api
+   docker build -t gcr.io/ngt-file-processor/file-processor-api:latest --platform linux/amd64 .
+   gcloud auth configure-docker
+   docker push gcr.io/ngt-file-processor/file-processor-api:latest
    ```
 
-## API Service
+2. Deploy with Terraform:
+   ```bash
+   cd terraform
+   terraform init
+   terraform apply
+   ```
 
-The `api/` directory contains a FastAPI service that provides endpoints to:
 
-- List processed files
-- Get file metadata
-- Download files
-- Delete files
 
-The API service is deployed separately as a Cloud Run service.
+## Usage
+
+### Uploading Files
+
+Upload files to the storage bucket:
+```bash
+gsutil cp random.txt gs://file-upload-bucket-YOUR-PROJECT-ID/
+```
+
+### Using the API
+
+Access the API using the Cloud Run URL:
+```bash
+API_URL=https://file-processor-api-797926948558.us-central1.run.app
+
+curl $API_URL/files
+
+curl $API_URL/files/file-id
+```
+

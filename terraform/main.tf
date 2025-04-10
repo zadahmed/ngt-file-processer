@@ -27,6 +27,11 @@ resource "google_storage_bucket_object" "function_object" {
   source = data.archive_file.function_zip.output_path
 }
 
+resource "google_project_iam_member" "gcs_pubsub_publisher" {
+  project = var.project_id
+  role    = "roles/pubsub.publisher"
+  member  = "serviceAccount:${data.google_storage_project_service_account.gcs_account.email_address}"
+}
 
 resource "google_project_service" "eventarc" {
   project                    = var.project_id
@@ -42,6 +47,23 @@ resource "google_storage_bucket_iam_member" "eventarc_storage_permission" {
   bucket = google_storage_bucket.file_upload_bucket.name
   role   = "roles/storage.admin"
   member = "serviceAccount:${data.google_storage_project_service_account.gcs_account.email_address}"
+}
+
+resource "google_project_service" "firestore" {
+  project                    = var.project_id
+  service                    = "firestore.googleapis.com"
+  disable_dependent_services = false
+}
+
+resource "google_service_account" "function_service_account" {
+  account_id   = "file-processor-function-sa"
+  display_name = "File Processor Function Service Account"
+}
+
+resource "google_project_iam_member" "function_firestore_access" {
+  project = var.project_id
+  role    = "roles/datastore.user"
+  member  = "serviceAccount:${google_service_account.function_service_account.email}"
 }
 
 resource "google_cloudfunctions2_function" "process_file_function" {
@@ -64,6 +86,7 @@ resource "google_cloudfunctions2_function" "process_file_function" {
     max_instance_count = 10
     available_memory   = "256M"
     timeout_seconds    = 60
+    service_account_email = google_service_account.function_service_account.email
   }
 
   event_trigger {
@@ -74,8 +97,19 @@ resource "google_cloudfunctions2_function" "process_file_function" {
       value     = google_storage_bucket.file_upload_bucket.name
     }
   }
+
+  depends_on = [
+    google_project_service.firestore,
+    google_project_service.eventarc,
+    google_project_iam_member.gcs_pubsub_publisher
+  ]
 }
 
+resource "google_project_iam_member" "function_storage_access" {
+  project = var.project_id
+  role    = "roles/storage.objectViewer"
+  member  = "serviceAccount:${google_service_account.function_service_account.email}"
+}
 
 resource "google_project_service" "services" {
   for_each = toset([
@@ -138,5 +172,7 @@ resource "google_cloud_run_service_iam_member" "public_access" {
   role     = "roles/run.invoker"
   member   = "allUsers"
 }
+
+
 
 

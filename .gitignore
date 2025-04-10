@@ -2,3 +2,5 @@
 api/venv
 terraform/function.zip
 terraform/.terraform*
+scripts/test_files
+.pytest*
