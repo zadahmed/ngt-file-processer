@@ -15,7 +15,7 @@ A FastAPI-based API for accessing and managing file metadata stored in Firestore
 2. Run the application:
 
    ```bash
-   uvicorn app.main:app --reload
+   uvicorn main:app --reload
    ```
 
 3. Access the API documentation at http://localhost:8000/docs

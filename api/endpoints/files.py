@@ -2,7 +2,7 @@ from typing import Dict, List, Any
 from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.responses import JSONResponse
 
-from core.db import get_db 
+from core.db import get_db as get_firestore_db 
 from models.file import FileUpdate, FileResponse
 from config import COLLECTION_NAME
 
@@ -10,7 +10,7 @@ router = APIRouter(tags=["files"])
 
 def get_db():
     """Dependency to get database client"""
-    db = get_db()
+    db = get_firestore_db()  
     if db is None:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
